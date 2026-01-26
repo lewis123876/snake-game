@@ -50,7 +50,7 @@ public:
         {
             float x = body[i].x;
             float y = body[i].y;
-            Rectangle segment = Rectangle{x * cellSize, y * cellSize, cellSize, cellSize};
+            Rectangle segment = Rectangle{offset + x * cellSize, offset + y * cellSize, cellSize, cellSize};
             DrawRectangleRounded(segment, 0.5, 6, darkGreen);
         }
     }
@@ -96,7 +96,7 @@ public:
 
     void Draw()
     {
-        DrawTexture(texture, position.x * cellSize, position.y * cellSize, WHITE);
+        DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE);
     }
 
     Vector2 GenerateRandomCell()
@@ -125,6 +125,7 @@ public:
     Snake snake = Snake();
     Food food = Food(snake.body);
     bool running = false;
+    int score = 0;
 
     void Draw()
     {
@@ -149,6 +150,7 @@ public:
         {
             food.position = food.GenerateRandomPos(snake.body);
             snake.addSegment = true;
+            score++;
         }
     }
 
@@ -169,6 +171,7 @@ public:
         snake.Reset();
         food.position = food.GenerateRandomPos(snake.body);
         running = false;
+        score = 0;
     }
 
     void CheckCollisionWithTail()
@@ -184,7 +187,7 @@ public:
 
 int main()
 {
-    InitWindow(2 * offset + cellSize, 2 * offset + cellCount * cellSize, "Snake Game");
+    InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellCount * cellSize, "Snake Game");
     SetTargetFPS(60);
 
     Game game = Game();
@@ -220,6 +223,10 @@ int main()
 
         ClearBackground(green);
         DrawRectangleLinesEx(Rectangle{offset - 5, offset - 5, cellSize * cellCount + 10, cellSize * cellCount + 10}, 5, darkGreen);
+        DrawText("Snake Game", offset - 5, 20, 40, darkGreen);
+        const char *scoreText = TextFormat("%i", game.score);
+        int textWidth = MeasureText(scoreText, 40);
+        DrawText(scoreText, cellSize * cellCount + offset - textWidth, 20, 40, darkGreen);
         game.Draw();
 
         EndDrawing();
