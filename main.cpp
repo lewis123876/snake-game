@@ -40,8 +40,6 @@ public:
         float y = GetRandomValue(0, cellCount - 1);
         return Vector2{x, y};
     }
-
-private:
 };
 
 int main()
