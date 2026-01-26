@@ -12,6 +12,19 @@ float cellSize = 30;
 float cellCount = 25;
 
 double lastUpdateTime = 0;
+
+bool ElementInDeque(Vector2 element, deque<Vector2> deque)
+{
+    for (unsigned int i = 0; i < deque.size(); i++)
+    {
+        if (Vector2Equals(deque[i], element))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool eventTriggered(double interval)
 {
     double currentTime = GetTime();
@@ -53,12 +66,12 @@ public:
     // rmber: numbers represent cells not pixels
     Vector2 position;
     Texture2D texture;
-    Food()
+    Food(deque<Vector2> snakebody)
     {
         Image image = LoadImage("graphics/food.png");
         texture = LoadTextureFromImage(image);
         UnloadImage(image);
-        position = GenerateRandomPos();
+        position = GenerateRandomPos(snakebody);
     }
 
     ~Food()
@@ -71,11 +84,50 @@ public:
         DrawTexture(texture, position.x * cellSize, position.y * cellSize, WHITE);
     }
 
-    Vector2 GenerateRandomPos()
+    Vector2 GenerateRandomCell()
     {
         float x = GetRandomValue(0, cellCount - 1);
         float y = GetRandomValue(0, cellCount - 1);
         return Vector2{x, y};
+    }
+
+    Vector2 GenerateRandomPos(deque<Vector2> snakeBody)
+    {
+        float x = GetRandomValue(0, cellCount - 1);
+        float y = GetRandomValue(0, cellCount - 1);
+        Vector2 postion = {x, y};
+        while (ElementInDeque(position, snakeBody))
+        {
+            position = GenerateRandomCell();
+        }
+        return position;
+    }
+};
+
+class Game
+{
+public:
+    Snake snake = Snake();
+    Food food = Food(snake.body);
+
+    void Draw()
+    {
+        food.Draw();
+        snake.Draw();
+    }
+
+    void Update()
+    {
+        snake.Update();
+        CheckCollisionWithFood();
+    }
+
+    void CheckCollisionWithFood()
+    {
+        if (Vector2Equals(snake.body[0], food.position))
+        {
+            food.position = food.GenerateRandomPos(snake.body);
+        }
     }
 };
 
@@ -85,20 +137,35 @@ int main()
     InitWindow(cellCount * cellSize, cellCount * cellSize, "Snake Game");
     SetTargetFPS(60);
 
-    Food food = Food();
-    Snake snake = Snake();
+    Game game = Game();
 
     while (WindowShouldClose() == false)
     {
         BeginDrawing();
         if (eventTriggered(0.2))
         {
-            snake.Update();
+            game.Update();
+        }
+
+        if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1)
+        {
+            game.snake.direction = {0, -1};
+        }
+        if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1)
+        {
+            game.snake.direction = {0, 1};
+        }
+        if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1)
+        {
+            game.snake.direction = {1, 0};
+        }
+        if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1)
+        {
+            game.snake.direction = {-1, 0};
         }
 
         ClearBackground(green);
-        food.Draw();
-        snake.Draw();
+        game.Draw();
 
         EndDrawing();
     }
