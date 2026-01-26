@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <deque>
 #include "include/raylib.h"
 #include "include/raymath.h"
 using namespace std;
@@ -7,8 +8,25 @@ using namespace std;
 Color green = {173, 204, 96, 255};
 Color darkGreen = {43, 51, 24, 255};
 
-int cellSize = 30;
-int cellCount = 25;
+float cellSize = 30;
+float cellCount = 25;
+
+class Snake
+{
+public:
+    deque<Vector2> body = {Vector2{6, 9}, Vector2{5, 9}, Vector2{4, 9}};
+
+    void Draw()
+    {
+        for (int i = 0; i < body.size(); i++)
+        {
+            float x = body[i].x;
+            float y = body[i].y;
+            Rectangle segment = Rectangle{x * cellSize, y * cellSize, cellSize, cellSize};
+            DrawRectangleRounded(segment, 0.5, 6, darkGreen);
+        }
+    }
+};
 
 class Food
 {
@@ -49,6 +67,7 @@ int main()
     SetTargetFPS(60);
 
     Food food = Food();
+    Snake snake = Snake();
 
     while (WindowShouldClose() == false)
     {
@@ -56,6 +75,7 @@ int main()
 
         ClearBackground(green);
         food.Draw();
+        snake.Draw();
 
         EndDrawing();
     }
