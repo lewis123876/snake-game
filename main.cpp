@@ -5,8 +5,14 @@
 #include "include/raymath.h"
 using namespace std;
 
-Color green = {173, 204, 96, 255};
-Color darkGreen = {43, 51, 24, 255};
+Color bgPink = {255, 239, 246, 255};
+Color borderPink = {255, 170, 210, 255};
+Color jellyDarkBlue = {77, 165, 255, 220};
+Color jellyBlue = {120, 200, 255, 220};
+Color jellyWhite = {255, 255, 255, 90};
+Color outlineDark = {150, 40, 90, 255};
+Color textPink = {200, 60, 120, 255};
+Color candyRed = {255, 80, 80, 255};
 
 float cellSize = 30;
 float cellCount = 25;
@@ -51,14 +57,27 @@ public:
             float x = body[i].x;
             float y = body[i].y;
             Rectangle segment = Rectangle{offset + x * cellSize, offset + y * cellSize, cellSize, cellSize};
-            DrawRectangleRounded(segment, 0.5, 6, darkGreen);
+            Color bodyColor = (i % 2 == 0) ? jellyDarkBlue : jellyBlue;
+            DrawRectangleRounded(segment, 0.6, 8, bodyColor);
+            Rectangle highlight = {segment.x + 4, segment.y + 4, segment.width - 8, segment.height - 8};
+
+            DrawRectangleRounded(highlight, 0.4, 6, jellyWhite);
         }
     }
 
-    void Update()
+    bool Update()
     {
-        body.push_front(Vector2Add(body[0], direction));
-        if (addSegment == true)
+        Vector2 nextHead = Vector2Add(body[0], direction);
+
+        if (nextHead.x < 0 || nextHead.x >= cellCount ||
+            nextHead.y < 0 || nextHead.y >= cellCount)
+        {
+            return false;
+        }
+
+        body.push_front(nextHead);
+
+        if (addSegment)
         {
             addSegment = false;
         }
@@ -66,6 +85,8 @@ public:
         {
             body.pop_back();
         }
+
+        return true;
     }
 
     void Reset()
@@ -78,15 +99,15 @@ public:
 class Food
 {
 public:
-    // rmber: numbers represent cells not pixels
+    vector<string> images = {"candy", "croissant", "gummy-bear", "strawberry"};
     Vector2 position;
     Texture2D texture;
+    float bounceTime = 0.0;
+
     Food(deque<Vector2> snakebody)
     {
-        Image image = LoadImage("graphics/food.png");
-        texture = LoadTextureFromImage(image);
-        UnloadImage(image);
-        position = GenerateRandomPos(snakebody);
+        GenerateFoodImg();
+        position = GenerateRandomFood(snakebody);
     }
 
     ~Food()
@@ -94,9 +115,33 @@ public:
         UnloadTexture(texture);
     }
 
+    void GenerateFoodImg()
+    {
+        int randPos = rand() % images.size();
+        cout << "pos: " << randPos << " res: " << images[randPos];
+        string path = "graphics/" + images[randPos] + ".png";
+        Image image = LoadImage(path.c_str());
+        texture = LoadTextureFromImage(image);
+        UnloadImage(image);
+    }
+
     void Draw()
     {
-        DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE);
+        bounceTime += GetFrameTime();
+        float bounce = sin(bounceTime * 6) * 3;
+        float scale = 1.0 + sin(bounceTime * 6) * 0.05;
+
+        Rectangle dest = {
+            offset + position.x * cellSize + cellSize / 2,
+            offset + position.y * cellSize + cellSize / 2 + bounce,
+            cellSize * scale,
+            cellSize * scale};
+
+        Rectangle source = {0, 0, (float)texture.width, (float)texture.height};
+
+        Vector2 origin = {dest.width / 2, dest.height / 2};
+
+        DrawTexturePro(texture, source, dest, origin, 0.0, WHITE);
     }
 
     Vector2 GenerateRandomCell()
@@ -106,7 +151,7 @@ public:
         return Vector2{x, y};
     }
 
-    Vector2 GenerateRandomPos(deque<Vector2> snakeBody)
+    Vector2 GenerateRandomFood(deque<Vector2> snakeBody)
     {
         float x = GetRandomValue(0, cellCount - 1);
         float y = GetRandomValue(0, cellCount - 1);
@@ -115,6 +160,7 @@ public:
         {
             position = GenerateRandomCell();
         }
+        GenerateFoodImg();
         return position;
     }
 };
@@ -152,19 +198,25 @@ public:
 
     void Update()
     {
-        if (running)
+        if (!running || gameOver)
+            return;
+
+        bool moved = snake.Update();
+
+        if (!moved)
         {
-            CheckCollisionWithFood();
-            snake.Update();
-            CheckCollisionWithEdges();
-            CheckCollisionWithTail();
+            GameOver();
+            return;
         }
+
+        CheckCollisionWithFood();
+        CheckCollisionWithTail();
     }
 
     void restart()
     {
         snake.Reset();
-        food.position = food.GenerateRandomPos(snake.body);
+        food.position = food.GenerateRandomFood(snake.body);
         score = 0;
         gameOver = false;
         running = false;
@@ -174,22 +226,10 @@ public:
     {
         if (Vector2Equals(snake.body[0], food.position))
         {
-            food.position = food.GenerateRandomPos(snake.body);
+            food.position = food.GenerateRandomFood(snake.body);
             snake.addSegment = true;
             score++;
             PlaySound(eatSound);
-        }
-    }
-
-    void CheckCollisionWithEdges()
-    {
-        if (snake.body[0].x == cellCount || snake.body[0].x == -1)
-        {
-            GameOver();
-        }
-        if (snake.body[0].y == cellCount || snake.body[0].y == -1)
-        {
-            GameOver();
         }
     }
 
@@ -220,28 +260,23 @@ public:
             offset,
             cellSize * cellCount,
             cellSize * cellCount,
-            Color{0, 0, 0, 200});
+            Color{255, 170, 210, 200});
 
         const char *text = "GAME OVER";
         int fontSize = 40;
         int textWidth = MeasureText(text, fontSize);
 
-        DrawText(text,
-                 offset + (cellSize * cellCount - textWidth) / 2,
-                 offset + cellSize * cellCount / 2 - fontSize,
-                 fontSize,
-                 WHITE);
+        DrawText(text, offset + (cellSize * cellCount - textWidth) / 2,
+                 offset + cellSize * cellCount / 2 - fontSize, fontSize,
+                 candyRed);
 
         const char *subText = "Press ENTER to restart";
         int subSize = 20;
         int subWidth = MeasureText(subText, subSize);
 
         DrawText(
-            subText,
-            offset + (cellSize * cellCount - subWidth) / 2,
-            offset + cellSize * cellCount / 2 + 10,
-            subSize,
-            WHITE);
+            subText, offset + (cellSize * cellCount - subWidth) / 2,
+            offset + cellSize * cellCount / 2 + 10, subSize, textPink);
     }
 };
 
@@ -290,12 +325,12 @@ int main()
             game.restart();
         }
 
-        ClearBackground(green);
-        DrawRectangleLinesEx(Rectangle{offset - 5, offset - 5, cellSize * cellCount + 10, cellSize * cellCount + 10}, 5, darkGreen);
-        DrawText("Snake Game", offset - 5, 20, 40, darkGreen);
-        const char *scoreText = TextFormat("%i", game.score);
+        ClearBackground(bgPink);
+        DrawRectangleLinesEx(Rectangle{offset - 5, offset - 5, cellSize * cellCount + 10, cellSize * cellCount + 10}, 5, borderPink);
+        DrawText("Snake Game", offset - 5, 20, 40, textPink);
+        const char *scoreText = TextFormat("Score: %i", game.score);
         int textWidth = MeasureText(scoreText, 40);
-        DrawText(scoreText, cellSize * cellCount + offset - textWidth, 20, 40, darkGreen);
+        DrawText(scoreText, cellSize * cellCount + offset - textWidth, 20, 40, textPink);
         game.Draw();
 
         EndDrawing();
