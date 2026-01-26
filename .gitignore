@@ -1,0 +1,12 @@
+.DS_Store
+.vscode/
+*.o
+*.out
+*.exe
+main 
+complied-raylib-game
+
+*.dSYM/
+build/
+cmake-build-*/
+*.log
