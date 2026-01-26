@@ -110,7 +110,7 @@ public:
     {
         float x = GetRandomValue(0, cellCount - 1);
         float y = GetRandomValue(0, cellCount - 1);
-        Vector2 postion = {x, y};
+        Vector2 position = {x, y};
         while (ElementInDeque(position, snakeBody))
         {
             position = GenerateRandomCell();
@@ -126,6 +126,21 @@ public:
     Food food = Food(snake.body);
     bool running = false;
     int score = 0;
+    Sound eatSound;
+    Sound wallSound;
+
+    Game()
+    {
+        eatSound = LoadSound("sounds/eat.mp3");
+        wallSound = LoadSound("sounds/wall.mp3");
+    }
+
+    ~Game()
+    {
+        UnloadSound(eatSound);
+        UnloadSound(wallSound);
+        CloseAudioDevice();
+    }
 
     void Draw()
     {
@@ -151,6 +166,7 @@ public:
             food.position = food.GenerateRandomPos(snake.body);
             snake.addSegment = true;
             score++;
+            PlaySound(eatSound);
         }
     }
 
@@ -172,6 +188,7 @@ public:
         food.position = food.GenerateRandomPos(snake.body);
         running = false;
         score = 0;
+        PlaySound(wallSound);
     }
 
     void CheckCollisionWithTail()
@@ -188,6 +205,7 @@ public:
 int main()
 {
     InitWindow(2 * offset + cellSize * cellCount, 2 * offset + cellCount * cellSize, "Snake Game");
+    InitAudioDevice();
     SetTargetFPS(60);
 
     Game game = Game();
