@@ -10,6 +10,7 @@ Color darkGreen = {43, 51, 24, 255};
 
 float cellSize = 30;
 float cellCount = 25;
+float offset = 75;
 
 double lastUpdateTime = 0;
 
@@ -183,7 +184,7 @@ public:
 
 int main()
 {
-    InitWindow(cellCount * cellSize, cellCount * cellSize, "Snake Game");
+    InitWindow(2 * offset + cellSize, 2 * offset + cellCount * cellSize, "Snake Game");
     SetTargetFPS(60);
 
     Game game = Game();
@@ -218,6 +219,7 @@ int main()
         }
 
         ClearBackground(green);
+        DrawRectangleLinesEx(Rectangle{offset - 5, offset - 5, cellSize * cellCount + 10, cellSize * cellCount + 10}, 5, darkGreen);
         game.Draw();
 
         EndDrawing();
