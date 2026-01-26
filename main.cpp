@@ -125,6 +125,7 @@ public:
     Snake snake = Snake();
     Food food = Food(snake.body);
     bool running = false;
+    bool gameOver = false;
     int score = 0;
     Sound eatSound;
     Sound wallSound;
@@ -146,10 +147,23 @@ public:
     {
         food.Draw();
         snake.Draw();
+        DrawGameOver();
     }
 
     void Update()
     {
+        if (gameOver)
+        {
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                snake.Reset();
+                food.position = food.GenerateRandomPos(snake.body);
+                score = 0;
+                gameOver = false;
+                running = false;
+            }
+        }
+
         if (running)
         {
             snake.Update();
@@ -182,15 +196,6 @@ public:
         }
     }
 
-    void GameOver()
-    {
-        snake.Reset();
-        food.position = food.GenerateRandomPos(snake.body);
-        running = false;
-        score = 0;
-        PlaySound(wallSound);
-    }
-
     void CheckCollisionWithTail()
     {
         deque<Vector2> headlessBody = snake.body;
@@ -199,6 +204,47 @@ public:
         {
             GameOver();
         }
+    }
+
+    void GameOver()
+    {
+        running = false;
+        gameOver = true;
+        PlaySound(wallSound);
+    }
+
+    void DrawGameOver()
+    {
+        if (!gameOver)
+            return;
+
+        DrawRectangle(
+            offset,
+            offset,
+            cellSize * cellCount,
+            cellSize * cellCount,
+            Color{0, 0, 0, 200});
+
+        const char *text = "GAME OVER";
+        int fontSize = 40;
+        int textWidth = MeasureText(text, fontSize);
+
+        DrawText(text,
+                 offset + (cellSize * cellCount - textWidth) / 2,
+                 offset + cellSize * cellCount / 2 - fontSize,
+                 fontSize,
+                 WHITE);
+
+        const char *subText = "Press ENTER to restart";
+        int subSize = 20;
+        int subWidth = MeasureText(subText, subSize);
+
+        DrawText(
+            subText,
+            offset + (cellSize * cellCount - subWidth) / 2,
+            offset + cellSize * cellCount / 2 + 10,
+            subSize,
+            WHITE);
     }
 };
 
