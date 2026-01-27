@@ -1,4 +1,4 @@
-#Candy Snake Game
+# Candy Snake Game
 A candy-themed Snake game built in **C++ using Raylib**, featuring jelly-style visuals, bouncing candy food, sound effects, and a soft pastel UI. This project is a modern take on the classic Snake game with a playful, sugary aesthetic.
 
 ## Features
