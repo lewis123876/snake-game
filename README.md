@@ -20,7 +20,7 @@ A candy-themed Snake game built in **C++ using Raylib**, featuring jelly-style v
 | ENTER | Restart game |
 | ESC   | Quit         |
 
-##How to Run
+## How to Run
 
 ### Requirements
 
